@@ -1010,7 +1010,7 @@ impl EscrowContract {
         offset: u32,
         limit: u32,
     ) -> (Vec<EscrowEvent>, u32) {
-        extend_instance_ttl(&env);
+        Self::extend_instance_ttl(&env);
         let key = DataKey::History(invoice_id);
         let history: Vec<EscrowEvent> = env
             .storage()
