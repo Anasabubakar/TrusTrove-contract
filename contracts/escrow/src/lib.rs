@@ -960,6 +960,42 @@ impl EscrowContract {
         }
     }
 
+    /// Returns the expiration timestamp when minimum-lock default handling
+    /// becomes allowed (`locked_at + DEFAULT_MIN_LOCK_SECONDS`), or panics
+    /// with `MathOverflow` on checked addition overflow. Returns 0 if not locked.
+    ///
+    /// # Arguments
+    /// * `env` - The Soroban environment.
+    /// * `invoice_id` - The invoice to query.
+    ///
+    /// # Auth
+    /// None. This is a read-only view.
+    ///
+    /// # Panics
+    /// * `MathOverflow` if `locked_at + DEFAULT_MIN_LOCK_SECONDS` overflows `u64`.
+    ///
+    /// # Returns
+    /// * `u64` - The lock expiration timestamp, or 0 if no escrow record exists.
+    ///
+    /// # Example
+    /// ```ignore
+    /// let expiry = client.get_lock_expiration(&invoice_id);
+    /// ```
+    pub fn get_lock_expiration_timestamp(env: Env, invoice_id: BytesN<32>) -> u64 {
+        let key = DataKey::Locked(invoice_id);
+        match env.storage().persistent().get::<_, EscrowRecord>(&key) {
+            Some(r) => {
+                env.storage()
+                    .persistent()
+                    .extend_ttl(&key, TTL_THRESHOLD, TTL_EXTEND_TO);
+                r.locked_at
+                    .checked_add(DEFAULT_MIN_LOCK_SECONDS)
+                    .unwrap_or_else(|| panic_with_error!(&env, EscrowError::MathOverflow))
+            }
+            None => 0,
+        }
+    }
+
     /// Returns the history of escrow events for an invoice.
     ///
     /// # Arguments
