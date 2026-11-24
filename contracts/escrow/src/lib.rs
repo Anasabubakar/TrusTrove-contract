@@ -979,6 +979,46 @@ impl EscrowContract {
     /// ```ignore
     /// let history = client.get_history(&invoice_id);
     /// ```
+    /// Returns a paginated slice of the escrow event history for the given invoice ID,
+    /// along with the total count of events in the history vector.
+    ///
+    /// # Arguments
+    /// * `env` - The Soroban environment.
+    /// * `invoice_id` - The 32-byte invoice identifier.
+    /// * `offset` - The starting index for the page.
+    /// * `limit` - The maximum number of items to return.
+    ///
+    /// # Returns
+    /// A tuple of `(Vec<EscrowEvent>, u32)` containing the events in stable chronological
+    /// order and the total count of events.
+    pub fn get_history_page(
+        env: Env,
+        invoice_id: BytesN<32>,
+        offset: u32,
+        limit: u32,
+    ) -> (Vec<EscrowEvent>, u32) {
+        extend_instance_ttl(&env);
+        let key = DataKey::History(invoice_id);
+        let history: Vec<EscrowEvent> = env
+            .storage()
+            .persistent()
+            .get(&key)
+            .unwrap_or_else(|| Vec::new(&env));
+        let total = history.len();
+        let mut page = Vec::new(&env);
+        if (offset as u64) < (total as u64) {
+            let end = core::cmp::min((offset as u64) + (limit as u64), total as u64);
+            let mut i = offset as u64;
+            while i < end {
+                if let Some(event) = history.get(i as u32) {
+                    page.push_back(event);
+                }
+                i += 1;
+            }
+        }
+        (page, total)
+    }
+
     pub fn get_history(env: Env, invoice_id: BytesN<32>) -> Vec<EscrowEvent> {
         let key = DataKey::History(invoice_id);
         match env.storage().persistent().get::<_, Vec<EscrowEvent>>(&key) {
