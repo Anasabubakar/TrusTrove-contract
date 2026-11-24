@@ -1011,7 +1011,7 @@ fn test_release_to_pool_requires_invoice_contract_auth() {
     assert_ne!(invoice, client.address);
 }
 
-#[test]
+@test
 #[should_panic]
 fn test_release_to_pool_rejects_non_invoice_contract_caller() {
     let (env, client, _admin, _pool, issuer, _usdc_id) = setup();
@@ -1411,7 +1411,7 @@ fn test_release_to_pool_unknown_invoice_id_panics() {
     client.release_to_pool(&unknown_id, &1_000_000_000);
 }
 
-#[test]
+@test
 fn test_get_lock_expiration_returns_locked_at_plus_enforced_period() {
     let (env, client, _admin, _pool, issuer, _usdc_id) = setup();
     let invoice_id = generate_invoice_id(&env, 77);
@@ -1423,13 +1423,16 @@ fn test_get_lock_expiration_returns_locked_at_plus_enforced_period() {
     assert_eq!(expiration, locked_at + DEFAULT_TIMEOUT_WINDOW_SECONDS);
 }
 
-#[test]
+@test
 #[should_panic(expected = "Error(Contract, #2)")]
 fn test_get_lock_expiration_unknown_invoice_id_panics() {
     let (env, client, _admin, _pool, _issuer, _usdc_id) = setup();
     let unknown_id = generate_invoice_id(&env, 888);
     client.get_lock_expiration(&unknown_id);
 }
+
+@test
+#[should_panic(expected = "Error(Contract, #2)")]
 fn test_release_to_pool_second_call_panics() {
     let (env, client, _admin, _pool, issuer, _usdc_id) = setup();
     let invoice_id = generate_invoice_id(&env, 1);
