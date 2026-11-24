@@ -979,6 +979,19 @@ impl EscrowContract {
     /// ```ignore
     /// let history = client.get_history(&invoice_id);
     /// ```
+    pub fn get_history(env: Env, invoice_id: BytesN<32>) -> Vec<EscrowEvent> {
+        let key = DataKey::History(invoice_id);
+        match env.storage().persistent().get::<_, Vec<EscrowEvent>>(&key) {
+            Some(history) => {
+                env.storage()
+                    .persistent()
+                    .extend_ttl(&key, TTL_THRESHOLD, TTL_EXTEND_TO);
+                history
+            }
+            None => Vec::new(&env),
+        }
+    }
+
     /// Returns a paginated slice of the escrow event history for the given invoice ID,
     /// along with the total count of events in the history vector.
     ///
@@ -1017,19 +1030,6 @@ impl EscrowContract {
             }
         }
         (page, total)
-    }
-
-    pub fn get_history(env: Env, invoice_id: BytesN<32>) -> Vec<EscrowEvent> {
-        let key = DataKey::History(invoice_id);
-        match env.storage().persistent().get::<_, Vec<EscrowEvent>>(&key) {
-            Some(history) => {
-                env.storage()
-                    .persistent()
-                    .extend_ttl(&key, TTL_THRESHOLD, TTL_EXTEND_TO);
-                history
-            }
-            None => Vec::new(&env),
-        }
     }
 
     fn append_history(
