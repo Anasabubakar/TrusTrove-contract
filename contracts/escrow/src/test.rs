@@ -1412,7 +1412,24 @@ fn test_release_to_pool_unknown_invoice_id_panics() {
 }
 
 #[test]
+fn test_get_lock_expiration_returns_locked_at_plus_enforced_period() {
+    let (env, client, _admin, _pool, issuer, _usdc_id) = setup();
+    let invoice_id = generate_invoice_id(&env, 77);
+    let amount: u128 = 1_000_000_000;
+
+    client.lock(&invoice_id, &amount, &issuer);
+    let locked_at = client.get_locked_at(&invoice_id);
+    let expiration = client.get_lock_expiration(&invoice_id);
+    assert_eq!(expiration, locked_at + DEFAULT_TIMEOUT_WINDOW_SECONDS);
+}
+
+#[test]
 #[should_panic(expected = "Error(Contract, #2)")]
+fn test_get_lock_expiration_unknown_invoice_id_panics() {
+    let (env, client, _admin, _pool, _issuer, _usdc_id) = setup();
+    let unknown_id = generate_invoice_id(&env, 888);
+    client.get_lock_expiration(&unknown_id);
+}
 fn test_release_to_pool_second_call_panics() {
     let (env, client, _admin, _pool, issuer, _usdc_id) = setup();
     let invoice_id = generate_invoice_id(&env, 1);
